@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { HttpMethod, ToolConfig } from "./types.js";
+import type { HttpMethod, RequestTemplate, ToolConfig } from "./types.js";
 
 const ALL_METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 const SAFE_METHODS: HttpMethod[] = ["GET"];
 
-const DEFAULT_CONFIG: Omit<ToolConfig, "baseUrl" | "openApiSpec" | "identifiers" | "auth"> &
-  Pick<ToolConfig, "defaultHeaders"> = {
+const DEFAULT_CONFIG: Omit<ToolConfig, "baseUrl" | "openApiSpec" | "identifiers" | "auth"> = {
+  targets: [],
   defaultHeaders: {
     Accept: "application/json"
   },
@@ -31,9 +31,20 @@ const DEFAULT_CONFIG: Omit<ToolConfig, "baseUrl" | "openApiSpec" | "identifiers"
   outputDir: "output"
 };
 
+interface RawTarget {
+  method?: string;
+  path?: string;
+  operationId?: string;
+  summary?: string;
+  pathParams?: string[];
+  queryParams?: string[];
+  bodyKeys?: string[];
+}
+
 interface RawConfig {
   baseUrl?: string;
   openApiSpec?: string;
+  targets?: RawTarget[];
   auth?: {
     attacker?: { headers?: Record<string, string> };
     victim?: { headers?: Record<string, string> };
@@ -75,13 +86,99 @@ function normalizeMethods(methods: string[] | undefined, safeMode: boolean): Htt
   return normalized.filter((method) => SAFE_METHODS.includes(method));
 }
 
+function normalizeStringList(values: string[] | undefined): string[] {
+  if (!values || values.length === 0) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+  for (const value of values) {
+    const normalized = value.trim();
+    if (!normalized) {
+      continue;
+    }
+    unique.add(normalized);
+  }
+
+  return [...unique];
+}
+
+function pathParamsFromTemplate(apiPath: string): string[] {
+  const output: string[] = [];
+  const regex = /\{([^}]+)\}/g;
+  let match: RegExpExecArray | null = regex.exec(apiPath);
+  while (match) {
+    const param = match[1];
+    if (param) {
+      output.push(param);
+    }
+    match = regex.exec(apiPath);
+  }
+  return output;
+}
+
+function normalizeTargetPath(rawPath: string): string {
+  const trimmed = rawPath.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (isUrl(trimmed) || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  return `/${trimmed}`;
+}
+
+function toManualOperationId(method: HttpMethod, apiPath: string, index: number): string {
+  const normalized = apiPath.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const pathPart = normalized || "root";
+  return `manual_${method.toLowerCase()}_${pathPart}_${index + 1}`;
+}
+
+function normalizeTargets(rawTargets: RawTarget[] | undefined): RequestTemplate[] {
+  if (!rawTargets || rawTargets.length === 0) {
+    return [];
+  }
+
+  return rawTargets.map((target, index) => {
+    const rawPath = target.path ?? "";
+    const pathValue = normalizeTargetPath(rawPath);
+    if (!pathValue) {
+      throw new Error(`targets[${index}].path is required.`);
+    }
+
+    const rawMethod = (target.method ?? "GET").trim().toUpperCase();
+    if (!isHttpMethod(rawMethod)) {
+      throw new Error(`targets[${index}].method must be one of: ${ALL_METHODS.join(", ")}`);
+    }
+
+    const method: HttpMethod = rawMethod;
+
+    const pathParams = normalizeStringList(target.pathParams);
+    for (const templatedParam of pathParamsFromTemplate(pathValue)) {
+      if (!pathParams.includes(templatedParam)) {
+        pathParams.push(templatedParam);
+      }
+    }
+
+    return {
+      method,
+      path: pathValue,
+      operationId: target.operationId?.trim() || toManualOperationId(method, pathValue, index),
+      summary: target.summary?.trim() || undefined,
+      pathParams,
+      queryParams: normalizeStringList(target.queryParams),
+      bodyKeys: normalizeStringList(target.bodyKeys)
+    };
+  });
+}
+
 function assertRequiredConfig(config: ToolConfig): void {
   if (!config.baseUrl) {
     throw new Error("`baseUrl` is required in config.");
   }
 
-  if (!config.openApiSpec) {
-    throw new Error("`openApiSpec` is required in config.");
+  if (!config.openApiSpec && config.targets.length === 0) {
+    throw new Error("Either `openApiSpec` or `targets` must be provided in config.");
   }
 
   if (!config.identifiers || Object.keys(config.identifiers).length === 0) {
@@ -117,7 +214,8 @@ export async function loadConfig(configPath: string): Promise<{ config: ToolConf
 
   const config: ToolConfig = {
     baseUrl: parsed.baseUrl ?? "",
-    openApiSpec: resolveMaybeRelative(configDir, parsed.openApiSpec) ?? "",
+    openApiSpec: resolveMaybeRelative(configDir, parsed.openApiSpec),
+    targets: normalizeTargets(parsed.targets),
     auth: {
       attacker: {
         headers: parsed.auth?.attacker?.headers ?? {}

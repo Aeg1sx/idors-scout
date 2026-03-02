@@ -2,6 +2,7 @@ import type { Finding, RequestTemplate, ScanResult, ToolConfig } from "./types.j
 import { loadTemplatesFromOpenApi } from "./openapi.js";
 import { runTemplateProbe } from "./idor-engine.js";
 import { browserValidateFindings } from "./browser-validator.js";
+import { uniqueBy } from "./utils.js";
 
 function recalculateSeverity(finding: Finding): Finding["severity"] {
   if (!finding.vulnerable) {
@@ -48,10 +49,38 @@ async function runWithConcurrency<TInput, TOutput>(
 export async function runScan(config: ToolConfig, cwd: string): Promise<ScanResult> {
   const startedAt = new Date().toISOString();
   const notes: string[] = [];
+  const collectedTemplates: RequestTemplate[] = [];
 
-  const templates = await loadTemplatesFromOpenApi(config, cwd);
+  if (config.openApiSpec) {
+    const openApiTemplates = await loadTemplatesFromOpenApi(config, cwd);
+    if (openApiTemplates.length === 0) {
+      notes.push("No IDOR-like candidates were extracted from OpenAPI. Check include/exclude patterns.");
+    }
+    collectedTemplates.push(...openApiTemplates);
+  }
+
+  if (config.targets.length > 0) {
+    const targetTemplates = config.targets.map((target) => ({
+      method: target.method,
+      path: target.path,
+      operationId: target.operationId ?? `${target.method.toLowerCase()}_${target.path.replace(/[^a-zA-Z0-9]+/g, "_")}`,
+      summary: target.summary,
+      pathParams: target.pathParams ?? [],
+      queryParams: target.queryParams ?? [],
+      bodyKeys: target.bodyKeys ?? []
+    }));
+
+    collectedTemplates.push(...targetTemplates);
+    notes.push(`Using ${targetTemplates.length} explicit target(s) from config.targets.`);
+  }
+
+  const templates = uniqueBy(
+    collectedTemplates,
+    (template) => `${template.method} ${template.path} ${template.operationId}`
+  ).slice(0, config.scan.maxCandidates);
+
   if (templates.length === 0) {
-    notes.push("No IDOR-like candidates were extracted from OpenAPI. Check include/exclude patterns.");
+    notes.push("No request templates available to scan. Provide OpenAPI candidates or config.targets.");
   }
 
   const findings = await runWithConcurrency<RequestTemplate, Finding>(templates, config.scan.concurrency, async (template) => {

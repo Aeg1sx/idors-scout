@@ -7,6 +7,7 @@ function createConfig(): ToolConfig {
   return {
     baseUrl: "https://api.example.com",
     openApiSpec: "unused.json",
+    targets: [],
     auth: {
       attacker: { headers: { Authorization: "Bearer attacker" } },
       victim: { headers: { Authorization: "Bearer victim" } }

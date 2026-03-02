@@ -4,6 +4,12 @@
 
 `IDOR Scout`는 OpenAPI(JSON) 기반 후보 추출, 2계정 교차 검증, Playwright 브라우저 컨텍스트 재검증을 결합해 IDOR(Insecure Direct Object Reference) 테스트의 오탐을 줄이도록 설계된 CLI 도구입니다.
 
+## 책임 고지
+
+- 이 도구 사용에 대한 모든 책임은 사용자에게 있습니다.
+- 반드시 명시적으로 승인된 범위의 시스템에서만 테스트하세요.
+- 도구 사용으로 발생한 오남용, 손해, 법적 문제에 대해 작성자/유지보수자는 책임지지 않습니다.
+
 ## 왜 이런 구조인가
 
 단순 상태코드 체크 대신, API 응답 신호와 브라우저 레벨 검증을 함께 반영하는 증거 체인 기반 점수화를 사용합니다.
@@ -57,16 +63,28 @@ node dist/cli.js --help
 
 1. 예시 설정 복사
 
+OpenAPI 모드:
+
 ```bash
 cp examples/config.example.json config.json
 ```
 
+Targets 전용 모드(OpenAPI 없이):
+
+```bash
+cp examples/config.targets.example.json config.json
+```
+
 2. `config.json` 값 수정
 
-- `baseUrl`, `openApiSpec`
-- `auth.attacker.headers.Authorization`
-- `auth.victim.headers.Authorization`
-- `identifiers` (attacker/victim ID 쌍)
+- `baseUrl`
+- `openApiSpec`(OpenAPI 모드) 또는 `targets`(Targets 전용 모드)
+- `auth.attacker.headers.Authorization` / `auth.victim.headers.Authorization`
+- `identifiers` (최소 1개 attacker/victim ID 쌍)
+
+`config.example.json`은 필수 항목만 담은 최소 설정입니다.
+대부분의 scan/playwright/output 값은 코드 기본값이 자동 적용됩니다.
+세부 튜닝이 필요하면 `examples/config.advanced.example.json`을 사용하세요.
 
 3. 실행
 
@@ -122,6 +140,35 @@ victim 계정도 별도 파일로 동일하게 준비하세요.
   - `{userId}`, `{projectId}` 같은 path param
   - `?userId=...` 같은 query param
   - body 내 `ownerId`, `userId` 같은 key
+
+## Targets 전용 모드 (OpenAPI 없이)
+
+- `openApiSpec` 대신 `targets`를 설정하면 됩니다.
+- 최소 예시:
+
+```json
+{
+  "baseUrl": "https://api.target.local",
+  "targets": [{ "method": "GET", "path": "/users/{uid}" }],
+  "auth": {
+    "attacker": { "headers": { "Authorization": "Bearer ATTACKER_TOKEN" } },
+    "victim": { "headers": { "Authorization": "Bearer VICTIM_TOKEN" } }
+  },
+  "identifiers": { "uid": { "attacker": "10001", "victim": "20001" } }
+}
+```
+
+- 각 target의 경로에 있는 `{...}` 값은 `pathParams`로 자동 인식됩니다.
+
+## 생략 시 기본값
+
+- `scan.safeMode: true`
+- `scan.concurrency: 4`
+- `scan.maxMutationVariants: 12`
+- `scan.maxCandidates: 300`
+- `scan.timeoutMs: 10000`
+- `playwright.enabled: false`
+- `outputDir: ./output` (config 파일 기준 상대경로)
 
 ## 오탐 감소 전략
 

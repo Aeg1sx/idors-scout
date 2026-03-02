@@ -9,6 +9,7 @@ import type { ToolConfig } from "../src/types.js";
 const baseConfig: ToolConfig = {
   baseUrl: "https://api.example.com",
   openApiSpec: "",
+  targets: [],
   auth: {
     attacker: { headers: { Authorization: "Bearer a" } },
     victim: { headers: { Authorization: "Bearer b" } }

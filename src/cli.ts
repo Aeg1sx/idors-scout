@@ -190,7 +190,8 @@ Examples:
         const infoTag = tag("INFO", "\x1b[36m", useColorOutput(options.color));
         console.log(`${infoTag} Config: ${absolutePath}`);
         console.log(`${infoTag} Base URL: ${config.baseUrl}`);
-        console.log(`${infoTag} OpenAPI: ${config.openApiSpec}`);
+        console.log(`${infoTag} OpenAPI: ${config.openApiSpec ?? "(disabled)"}`);
+        console.log(`${infoTag} Explicit targets: ${config.targets.length}`);
         console.log(`${infoTag} Output dir: ${config.outputDir}`);
       }
 

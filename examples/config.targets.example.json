@@ -1,6 +1,11 @@
 {
   "baseUrl": "https://api.target.local",
-  "openApiSpec": "openapi.sample.json",
+  "targets": [
+    {
+      "method": "GET",
+      "path": "/users/{uid}"
+    }
+  ],
   "auth": {
     "attacker": {
       "headers": {
@@ -14,7 +19,7 @@
     }
   },
   "identifiers": {
-    "userid": {
+    "uid": {
       "attacker": "10001",
       "victim": "20001"
     }

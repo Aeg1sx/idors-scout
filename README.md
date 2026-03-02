@@ -4,6 +4,12 @@ English | [한국어](README.ko.md)
 
 `IDOR Scout` is a CLI tool designed to reduce false positives in IDOR (Insecure Direct Object Reference) testing by combining OpenAPI(JSON)-driven target discovery, two-account cross-validation, and optional Playwright browser-context revalidation.
 
+## Responsibility Disclaimer
+
+- You are solely responsible for how you use this tool.
+- Run scans only against systems you are explicitly authorized to test.
+- The authors/maintainers are not liable for misuse, damage, or legal issues caused by tool usage.
+
 ## Why This Architecture
 
 Instead of relying on status-code-only checks, IDOR Scout uses an evidence-chain scoring model that combines multiple signals from API responses and browser-level validation.
@@ -57,16 +63,28 @@ node dist/cli.js --help
 
 1. Copy example config
 
+OpenAPI mode:
+
 ```bash
 cp examples/config.example.json config.json
 ```
 
+Targets-only mode (without OpenAPI):
+
+```bash
+cp examples/config.targets.example.json config.json
+```
+
 2. Update `config.json`
 
-- `baseUrl`, `openApiSpec`
-- `auth.attacker.headers.Authorization`
-- `auth.victim.headers.Authorization`
-- `identifiers` (attacker/victim ID pairs)
+- `baseUrl`
+- `openApiSpec` (OpenAPI mode) or `targets` (targets-only mode)
+- `auth.attacker.headers.Authorization` / `auth.victim.headers.Authorization`
+- `identifiers` (at least one attacker/victim ID pair)
+
+`config.example.json` intentionally contains only required fields.
+Most scan/playwright/output values are optional and defaulted in code.
+For full tuning options, use `examples/config.advanced.example.json`.
 
 3. Run scan
 
@@ -122,6 +140,35 @@ Create a separate state file for the victim account.
   - Path params like `{userId}`, `{projectId}`
   - Query params like `?userId=...`
   - Body keys like `ownerId`, `userId`
+
+## Targets-Only Mode (Without OpenAPI)
+
+- Set `targets` in config instead of `openApiSpec`
+- Minimal example:
+
+```json
+{
+  "baseUrl": "https://api.target.local",
+  "targets": [{ "method": "GET", "path": "/users/{uid}" }],
+  "auth": {
+    "attacker": { "headers": { "Authorization": "Bearer ATTACKER_TOKEN" } },
+    "victim": { "headers": { "Authorization": "Bearer VICTIM_TOKEN" } }
+  },
+  "identifiers": { "uid": { "attacker": "10001", "victim": "20001" } }
+}
+```
+
+- `pathParams` are auto-detected from `{...}` placeholders in each target path.
+
+## Defaults (When Omitted)
+
+- `scan.safeMode: true`
+- `scan.concurrency: 4`
+- `scan.maxMutationVariants: 12`
+- `scan.maxCandidates: 300`
+- `scan.timeoutMs: 10000`
+- `playwright.enabled: false`
+- `outputDir: ./output` (relative to config file directory)
 
 ## False-Positive Reduction Strategy
 

@@ -33,9 +33,20 @@ export interface PlaywrightOptions {
   smokePath?: string;
 }
 
+export interface ScanTarget {
+  method: HttpMethod;
+  path: string;
+  operationId?: string;
+  summary?: string;
+  pathParams?: string[];
+  queryParams?: string[];
+  bodyKeys?: string[];
+}
+
 export interface ToolConfig {
   baseUrl: string;
-  openApiSpec: string;
+  openApiSpec?: string;
+  targets: ScanTarget[];
   auth: {
     attacker: AccountAuth;
     victim: AccountAuth;

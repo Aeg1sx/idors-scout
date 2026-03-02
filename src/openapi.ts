@@ -225,6 +225,10 @@ function extractTemplatesFromPath(
 }
 
 export async function loadTemplatesFromOpenApi(config: ToolConfig, cwd: string): Promise<RequestTemplate[]> {
+  if (!config.openApiSpec) {
+    throw new Error("OpenAPI loading requested, but `openApiSpec` is not configured.");
+  }
+
   const specText = await readTextFromPathOrUrl(config.openApiSpec, cwd);
   const parsed = tryParseJson<OpenApiDocument>(specText);
   if (!parsed) {
