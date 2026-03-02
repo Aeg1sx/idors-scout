@@ -1,0 +1,56 @@
+{
+  "baseUrl": "https://api.target.local",
+  "openApiSpec": "openapi.sample.json",
+  "auth": {
+    "attacker": {
+      "headers": {
+        "Authorization": "Bearer ATTACKER_TOKEN"
+      }
+    },
+    "victim": {
+      "headers": {
+        "Authorization": "Bearer VICTIM_TOKEN"
+      }
+    }
+  },
+  "defaultHeaders": {
+    "Accept": "application/json"
+  },
+  "identifiers": {
+    "userid": {
+      "attacker": "10001",
+      "victim": "20001"
+    },
+    "projectid": {
+      "attacker": "30001",
+      "victim": "40001"
+    },
+    "invoiceid": {
+      "attacker": "50001",
+      "victim": "60001"
+    }
+  },
+  "scan": {
+    "safeMode": true,
+    "maxMutationVariants": 12,
+    "concurrency": 4,
+    "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    "includePaths": [],
+    "excludePaths": ["/health", "/metrics", "/docs"],
+    "maxCandidates": 250,
+    "idParameterPatterns": ["id", "_id", "uuid", "userId", "projectId", "invoiceId"],
+    "ownerKeywords": ["ownerId", "userId", "accountId", "tenantId", "createdBy"],
+    "timeoutMs": 10000
+  },
+  "playwright": {
+    "enabled": false,
+    "baseUrl": "https://app.target.local",
+    "attackerStorageState": "states/attacker.storage.json",
+    "victimStorageState": "states/victim.storage.json",
+    "headed": false,
+    "timeoutMs": 15000,
+    "screenshotOnValidation": true,
+    "smokePath": "https://app.target.local/dashboard"
+  },
+  "outputDir": "../output"
+}

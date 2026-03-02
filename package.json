@@ -1,0 +1,37 @@
+{
+  "name": "idor-scout",
+  "version": "0.1.0",
+  "description": "High-confidence IDOR automation with OpenAPI and Playwright-backed validation",
+  "type": "module",
+  "bin": {
+    "idor-scout": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "scan": "tsx src/cli.ts scan -c examples/config.example.json",
+    "test": "node --test --import tsx test/**/*.test.ts",
+    "publish:check": "npm publish --dry-run --access public",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "idor",
+    "security",
+    "openapi",
+    "playwright",
+    "api-testing"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
