@@ -11,6 +11,7 @@
     "dev": "tsx src/cli.ts",
     "scan": "tsx src/cli.ts scan -c examples/config.example.json",
     "test": "node --test --import tsx test/**/*.test.ts",
+    "check": "npm run build && npm test",
     "publish:check": "npm publish --dry-run --access public",
     "prepublishOnly": "npm run build && npm test"
   },

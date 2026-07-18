@@ -188,10 +188,21 @@ Create a separate state file for the victim account.
 - `src/browser-validator.ts`: Playwright revalidation
 - `src/report.ts`: JSON/Markdown reporting
 
+## AI Agent Support
+
+The repository includes project-local context for coding agents:
+
+- `AGENTS.md`: safety boundaries, architectural invariants, change routing, and completion checks
+- `.agents/skills/maintain-idor-scout/`: reusable implementation and review workflow
+- `docs/decisions/`: durable rationale with links back to source and tests
+
+This keeps the default agent context small while making project-specific decisions available
+on demand and reviewable with the code that they constrain.
+
 ## Testing
 
 ```bash
-npm test
+npm run check
 ```
 
 ## Maintainer Release Check (Optional)

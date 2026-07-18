@@ -10,6 +10,14 @@ function isSuccess(status: number): boolean {
   return status >= 200 && status <= 299;
 }
 
+function hasValidApiEvidenceChain(finding: Finding): boolean {
+  return (
+    isSuccess(finding.responses.attackerOwn.status) &&
+    isSuccess(finding.responses.attackerMutated.status) &&
+    isSuccess(finding.responses.victimControl.status)
+  );
+}
+
 function pushEvidence(evidence: Evidence[], reason: string, scoreImpact: number): void {
   evidence.push({ reason, scoreImpact });
 }
@@ -154,7 +162,7 @@ export async function browserValidateFindings(findings: Finding[], config: ToolC
         );
         finding.confidence = Math.min(100, finding.confidence + 15);
         finding.browserValidated = true;
-        finding.vulnerable = finding.confidence >= 60;
+        finding.vulnerable = finding.confidence >= 60 && hasValidApiEvidenceChain(finding);
       } else {
         pushEvidence(
           finding.evidence,
@@ -163,7 +171,7 @@ export async function browserValidateFindings(findings: Finding[], config: ToolC
         );
         finding.confidence = Math.max(0, finding.confidence - 10);
         finding.browserValidated = true;
-        finding.vulnerable = finding.confidence >= 60;
+        finding.vulnerable = finding.confidence >= 60 && hasValidApiEvidenceChain(finding);
       }
 
       if (config.playwright.screenshotOnValidation && config.playwright.smokePath) {

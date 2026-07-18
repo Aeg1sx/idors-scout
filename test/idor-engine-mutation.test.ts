@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildScenarioRequests } from "../src/idor-engine.js";
-import type { RequestTemplate, ToolConfig } from "../src/types.js";
+import { buildScenarioRequests, scoreFinding } from "../src/idor-engine.js";
+import type { ProbeResponse, RequestTemplate, ToolConfig } from "../src/types.js";
 
 function createConfig(): ToolConfig {
   return {
@@ -95,4 +95,46 @@ test("buildScenarioRequests safely handles regex-significant path param names", 
 
   const scenario = buildScenarioRequests(template, config);
   assert.equal(scenario.attackerMutated.url.endsWith("/users/20"), true);
+});
+
+test("scoreFinding does not confirm a finding when the attacker-own baseline fails", () => {
+  const base = createConfig();
+  const config: ToolConfig = {
+    ...base,
+    scan: {
+      ...base.scan,
+      methods: ["GET"]
+    }
+  };
+  const template: RequestTemplate = {
+    method: "GET",
+    path: "/users/{cid}",
+    operationId: "getUser",
+    pathParams: ["cid"],
+    queryParams: [],
+    bodyKeys: []
+  };
+  const scenario = buildScenarioRequests(template, config);
+  const response = (status: number, json: unknown): ProbeResponse => ({
+    status,
+    headers: { "content-type": "application/json" },
+    text: JSON.stringify(json),
+    json,
+    elapsedMs: 1
+  });
+  const scored = scoreFinding(
+    template,
+    scenario,
+    {
+      attackerOwn: response(500, { error: "baseline unavailable" }),
+      attackerMutated: response(200, { cid: "CUST-2", value: "victim data" }),
+      victimControl: response(200, { cid: "CUST-2", value: "victim data" })
+    },
+    config,
+    "direct-id-swap",
+    200
+  );
+
+  assert.ok(scored.confidence >= 60);
+  assert.equal(scored.vulnerable, false);
 });
