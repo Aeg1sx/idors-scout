@@ -211,11 +211,12 @@ export async function loadConfig(configPath: string): Promise<{ config: ToolConf
 
   const safeMode = parsed.scan?.safeMode ?? DEFAULT_CONFIG.scan.safeMode;
   const scanMethods = normalizeMethods(parsed.scan?.methods as string[] | undefined, safeMode);
+  const targets = normalizeTargets(parsed.targets).filter((target) => scanMethods.includes(target.method));
 
   const config: ToolConfig = {
     baseUrl: parsed.baseUrl ?? "",
     openApiSpec: resolveMaybeRelative(configDir, parsed.openApiSpec),
-    targets: normalizeTargets(parsed.targets),
+    targets,
     auth: {
       attacker: {
         headers: parsed.auth?.attacker?.headers ?? {}

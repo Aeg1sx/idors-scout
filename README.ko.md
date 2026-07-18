@@ -188,10 +188,21 @@ victim 계정도 별도 파일로 동일하게 준비하세요.
 - `src/browser-validator.ts`: Playwright 재검증
 - `src/report.ts`: JSON/Markdown 리포트
 
+## AI 에이전트 지원
+
+코딩 에이전트가 프로젝트 맥락을 단계적으로 읽을 수 있도록 저장소 로컬 자료를 제공합니다.
+
+- `AGENTS.md`: 안전 경계, 아키텍처 불변 조건, 변경 영역 안내, 완료 기준
+- `.agents/skills/maintain-idor-scout/`: 반복 가능한 구현·리뷰 워크플로
+- `docs/decisions/`: 소스·테스트 근거와 연결된 주요 의사결정 기록
+
+기본 컨텍스트는 작게 유지하면서, 프로젝트 고유의 판단 근거를 필요할 때 불러오고 코드와 함께
+리뷰할 수 있는 구조입니다.
+
 ## 테스트
 
 ```bash
-npm test
+npm run check
 ```
 
 ## 유지보수자 릴리스 체크 (선택)

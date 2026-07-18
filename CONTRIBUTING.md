@@ -11,14 +11,9 @@ Thanks for contributing to IDOR Scout.
 npm ci
 ```
 
-2. Build:
+2. Build and run tests:
 ```bash
-npm run build
-```
-
-3. Run tests:
-```bash
-npm test
+npm run check
 ```
 
 ## Contribution Workflow
@@ -26,7 +21,7 @@ npm test
 1. Create a feature branch.
 2. Keep changes focused and small.
 3. Add or update tests for behavior changes.
-4. Run `npm run build` and `npm test` before opening PR.
+4. Run `npm run check` before opening PR.
 5. Open a pull request with:
 - problem statement
 - approach summary
@@ -39,6 +34,7 @@ npm test
 - Avoid breaking CLI/config compatibility without clear migration notes.
 - Prefer explicit behavior over magic defaults for security-sensitive logic.
 - Redact secrets/tokens from examples, logs, and reports.
+- Preserve the constraints in `AGENTS.md` and update `docs/decisions` when changing a durable project choice.
 
 ## Pull Request Checklist
 

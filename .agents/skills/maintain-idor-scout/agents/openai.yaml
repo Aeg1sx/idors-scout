@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain IDOR Scout"
+  short_description: "Safely change and validate IDOR Scout behavior"
+  default_prompt: "Use $maintain-idor-scout to implement and verify a focused IDOR Scout change."

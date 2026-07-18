@@ -497,7 +497,7 @@ function classifySeverity(confidence: number, vulnerable: boolean): Finding["sev
   return "low";
 }
 
-function scoreFinding(
+export function scoreFinding(
   template: RequestTemplate,
   scenario: BuiltScenario,
   responses: { attackerOwn: ProbeResponse; attackerMutated: ProbeResponse; victimControl: ProbeResponse },
@@ -634,7 +634,10 @@ function scoreFinding(
 
   const confidence = Math.max(0, Math.min(100, score));
   const vulnerable =
-    confidence >= 60 && isSuccess(responses.attackerMutated.status) && isSuccess(responses.victimControl.status);
+    confidence >= 60 &&
+    isSuccess(responses.attackerOwn.status) &&
+    isSuccess(responses.attackerMutated.status) &&
+    isSuccess(responses.victimControl.status);
 
   if (!vulnerable && confidence >= 45) {
     pushEvidence(
